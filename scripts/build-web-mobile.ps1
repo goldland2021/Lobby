@@ -51,13 +51,37 @@ function Get-LatestCocosLogContent([string]$logDir) {
 }
 
 function Invoke-CocosBuild([string]$homeArg) {
+  $argList = @("--project", "$projectRoot", "--build", "$buildArgs", "--disable-gpu", "--disable-gpu-shader-disk-cache")
   if ($homeArg) {
-    & $creatorExe --project $projectRoot --build $buildArgs --home $homeArg --disable-gpu --disable-gpu-shader-disk-cache
-  } else {
-    & $creatorExe --project $projectRoot --build $buildArgs --disable-gpu --disable-gpu-shader-disk-cache
+    $argList += @("--home", "$homeArg")
   }
-  if ($null -eq $LASTEXITCODE) { return 1 }
-  return $LASTEXITCODE
+
+  $logDir = Join-Path $projectRoot ".ci-cocos-process-logs"
+  New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+  $stdoutFile = Join-Path $logDir "cocos-stdout.log"
+  $stderrFile = Join-Path $logDir "cocos-stderr.log"
+  if (Test-Path $stdoutFile) { Remove-Item $stdoutFile -Force -ErrorAction SilentlyContinue }
+  if (Test-Path $stderrFile) { Remove-Item $stderrFile -Force -ErrorAction SilentlyContinue }
+
+  $process = Start-Process -FilePath $creatorExe `
+                           -ArgumentList $argList `
+                           -Wait `
+                           -PassThru `
+                           -NoNewWindow `
+                           -RedirectStandardOutput $stdoutFile `
+                           -RedirectStandardError $stderrFile
+
+  Write-Host "=== Cocos process stdout tail ==="
+  if (Test-Path $stdoutFile) {
+    Get-Content $stdoutFile -Tail 160 -ErrorAction SilentlyContinue
+  }
+  Write-Host "=== Cocos process stderr tail ==="
+  if (Test-Path $stderrFile) {
+    Get-Content $stderrFile -Tail 160 -ErrorAction SilentlyContinue
+  }
+
+  if ($null -eq $process -or $null -eq $process.ExitCode) { return 1 }
+  return $process.ExitCode
 }
 
 Write-Host "Using Cocos Creator: $creatorExe"
