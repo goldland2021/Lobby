@@ -29,6 +29,24 @@ jobs:
           COCOS_CREATOR_EXE: ${{ secrets.COCOS_CREATOR_EXE }}
         run: powershell -ExecutionPolicy Bypass -File scripts/build-web-mobile.ps1
 
+      - name: Dump Cocos Logs On Failure
+        if: failure()
+        shell: powershell
+        run: |
+          $paths = @(
+            "$env:USERPROFILE\.CocosCreator\logs",
+            "C:\Windows\ServiceProfiles\NetworkService\.CocosCreator\logs"
+          )
+          foreach ($p in $paths) {
+            if (Test-Path $p) {
+              Write-Host "=== Logs under $p ==="
+              Get-ChildItem $p -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 5 | ForEach-Object {
+                Write-Host "---- $($_.FullName)"
+                Get-Content $_.FullName -Tail 120 -ErrorAction SilentlyContinue
+              }
+            }
+          }
+
       - name: Verify Build Output
         run: if not exist build\web-mobile\index.html exit /b 1
 
