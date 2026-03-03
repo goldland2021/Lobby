@@ -39,6 +39,17 @@ function Dump-CocosLogs([string]$logDir) {
     }
 }
 
+function Get-LatestCocosLogContent([string]$logDir) {
+  if (-not $logDir -or -not (Test-Path $logDir)) {
+    return ""
+  }
+  $latest = Get-ChildItem $logDir -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+  if (-not $latest) {
+    return ""
+  }
+  return Get-Content $latest.FullName -Raw -ErrorAction SilentlyContinue
+}
+
 function Invoke-CocosBuild([string]$homeArg) {
   if ($homeArg) {
     & $creatorExe --project $projectRoot --build $buildArgs --home $homeArg --disable-gpu --disable-gpu-shader-disk-cache
@@ -58,15 +69,6 @@ $exitCode = 1
 $logDir = $null
 
 if ($isCi) {
-  $original = @{
-    HOME = $env:HOME
-    USERPROFILE = $env:USERPROFILE
-    APPDATA = $env:APPDATA
-    LOCALAPPDATA = $env:LOCALAPPDATA
-    TEMP = $env:TEMP
-    TMP = $env:TMP
-  }
-
   $ciHome = Join-Path $projectRoot ".ci-cocos-home"
   $ciCreatorHome = Join-Path $ciHome ".CocosCreator"
   $ciAppData = Join-Path $ciHome "AppData\\Roaming"
@@ -92,30 +94,16 @@ if ($isCi) {
   $exitCode = Invoke-CocosBuild $ciCreatorHome
 
   if ($exitCode -ne 0) {
-    Write-Host "Primary CI build failed in isolated home. Retrying with user home after disabling known legacy plugin..."
+    Write-Host "Primary CI build failed in isolated home."
     Dump-CocosLogs $logDir
-
-    foreach ($k in $original.Keys) {
-      Set-Item -Path "Env:$k" -Value $original[$k]
-    }
-
-    $realUser = [Environment]::GetFolderPath("UserProfile")
-    $realCreatorHome = Join-Path $realUser ".CocosCreator"
-    $legacyPlugin = Join-Path $realCreatorHome "packages\\im-plugin"
-    $legacyPluginDisabled = Join-Path $realCreatorHome "packages\\im-plugin.disabled-ci"
-
-    if (Test-Path $legacyPlugin) {
-      if (Test-Path $legacyPluginDisabled) {
-        Remove-Item -Recurse -Force $legacyPluginDisabled -ErrorAction SilentlyContinue
+    $latestLog = Get-LatestCocosLogContent $logDir
+    if ($latestLog -match "Profile migrateGlobal") {
+      Write-Host "Detected profile migration. Retrying once in the same isolated home..."
+      Start-Sleep -Seconds 2
+      $exitCode = Invoke-CocosBuild $ciCreatorHome
+      if ($exitCode -ne 0) {
+        Dump-CocosLogs $logDir
       }
-      Rename-Item $legacyPlugin "im-plugin.disabled-ci" -ErrorAction SilentlyContinue
-      Write-Host "Disabled legacy plugin: $legacyPlugin"
-    }
-
-    $logDir = Join-Path $realCreatorHome "logs"
-    $exitCode = Invoke-CocosBuild $realCreatorHome
-    if ($exitCode -ne 0) {
-      Dump-CocosLogs $logDir
     }
   }
 } else {
