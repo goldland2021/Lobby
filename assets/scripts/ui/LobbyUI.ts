@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, Label, Node } from "cc";
+import { _decorator, Button, Component, Label, Node, director } from "cc";
 import type { IUser } from "../model/UserModel";
 import { GameManager } from "../core/GameManager";
 import { AuthService } from "../network/AuthService";
@@ -31,18 +31,18 @@ export class LobbyUI extends Component {
   }
 
   private resolveReferences(): void {
-    const canvas = this.node;
+    const root = director.getScene() ?? this.node;
 
     if (!this.usernameLabel) {
-      const node = this.findInTree(canvas, "UsernameLabel");
+      const node = this.findInTree(root, "UsernameLabel");
       this.usernameLabel = node?.getComponent(Label) ?? null;
     }
     if (!this.scoreLabel) {
-      const node = this.findInTree(canvas, "ScoreLabel");
+      const node = this.findInTree(root, "ScoreLabel");
       this.scoreLabel = node?.getComponent(Label) ?? null;
     }
     if (!this.startButton) {
-      const node = this.findInTree(canvas, "StartButton");
+      const node = this.findInTree(root, "StartButton");
       this.startButton = node?.getComponent(Button) ?? null;
     }
 
