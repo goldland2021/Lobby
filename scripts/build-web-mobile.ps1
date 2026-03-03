@@ -24,13 +24,39 @@ if (-not $creatorExe) {
 }
 
 $buildArgs = "platform=web-mobile;debug=false;md5Cache=true"
+
+# In CI, isolate Cocos/Electron profile and cache dirs to avoid permission conflicts.
+if ($env:GITHUB_ACTIONS -eq "true") {
+  $ciHome = Join-Path $projectRoot ".ci-cocos-home"
+  $ciAppData = Join-Path $ciHome "AppData\\Roaming"
+  $ciLocalAppData = Join-Path $ciHome "AppData\\Local"
+  $ciTemp = Join-Path $ciHome "Temp"
+  $ciChromiumCache = Join-Path $ciHome "ChromiumCache"
+
+  New-Item -ItemType Directory -Force -Path $ciHome, $ciAppData, $ciLocalAppData, $ciTemp, $ciChromiumCache | Out-Null
+
+  $env:HOME = $ciHome
+  $env:USERPROFILE = $ciHome
+  $env:APPDATA = $ciAppData
+  $env:LOCALAPPDATA = $ciLocalAppData
+  $env:TEMP = $ciTemp
+  $env:TMP = $ciTemp
+
+  $env:ELECTRON_DISABLE_GPU = "1"
+  $env:COCOS_CHROMIUM_CACHE_DIR = $ciChromiumCache
+
+  Write-Host "CI isolated HOME: $ciHome"
+  Write-Host "CI isolated LOCALAPPDATA: $ciLocalAppData"
+}
+
 Write-Host "Using Cocos Creator: $creatorExe"
 Write-Host "Project: $projectRoot"
 Write-Host "Build Args: $buildArgs"
 
-& $creatorExe --project $projectRoot --build $buildArgs
-if ($LASTEXITCODE -ne 0) {
-  Write-Error "Cocos build failed with exit code $LASTEXITCODE"
+& $creatorExe --project $projectRoot --build $buildArgs --disable-gpu --disable-gpu-shader-disk-cache
+$exitCode = if ($null -eq $LASTEXITCODE) { 1 } else { $LASTEXITCODE }
+if ($exitCode -ne 0) {
+  Write-Error "Cocos build failed with exit code $exitCode"
 }
 
 $outDir = Join-Path $projectRoot "build\\web-mobile"
