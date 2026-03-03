@@ -96,7 +96,7 @@ if ($isCi) {
     Dump-CocosLogs $logDir
 
     foreach ($k in $original.Keys) {
-      $env:$k = $original[$k]
+      Set-Item -Path "Env:$k" -Value $original[$k]
     }
 
     $realUser = [Environment]::GetFolderPath("UserProfile")
