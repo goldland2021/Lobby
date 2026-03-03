@@ -25,6 +25,7 @@ if (-not $creatorExe) {
 
 $buildArgs = "platform=web-mobile;debug=false;md5Cache=true"
 $creatorHomeArg = $null
+$effectiveLogDir = $null
 
 # In CI, isolate Cocos/Electron profile and cache dirs to avoid permission conflicts.
 if ($env:GITHUB_ACTIONS -eq "true") {
@@ -53,6 +54,7 @@ if ($env:GITHUB_ACTIONS -eq "true") {
 
   # Force Creator to use isolated home so old global plugins won't be loaded.
   $creatorHomeArg = $ciCreatorHome
+  $effectiveLogDir = Join-Path $ciCreatorHome "logs"
 }
 
 Write-Host "Using Cocos Creator: $creatorExe"
@@ -66,6 +68,16 @@ if ($creatorHomeArg) {
 }
 $exitCode = if ($null -eq $LASTEXITCODE) { 1 } else { $LASTEXITCODE }
 if ($exitCode -ne 0) {
+  if ($effectiveLogDir -and (Test-Path $effectiveLogDir)) {
+    Write-Host "=== Cocos logs from $effectiveLogDir ==="
+    Get-ChildItem $effectiveLogDir -File -ErrorAction SilentlyContinue |
+      Sort-Object LastWriteTime -Descending |
+      Select-Object -First 5 |
+      ForEach-Object {
+        Write-Host "---- $($_.FullName)"
+        Get-Content $_.FullName -Tail 160 -ErrorAction SilentlyContinue
+      }
+  }
   Write-Error "Cocos build failed with exit code $exitCode"
 }
 
