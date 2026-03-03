@@ -1,0 +1,30 @@
+{
+  "name": "cherry-farm-horse-race",
+  "uuid": "ac4c6512-632e-4512-9fc1-c6c6cdaae0e4",
+  "creator": {
+    "version": "3.8.8"
+  },
+  "scripts": {
+    "build": "echo 'Build script not configured'",
+    "dev": "echo 'Dev script not configured'",
+    "test": "echo 'Test script not configured'"
+  },
+  "description": "Cocos Creator 2D赛马小游戏 - Cherry Farm Horse Racing",
+  "version": "1.0.0",
+  "author": "白昱",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "main": "index.js",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cocos",
+    "game",
+    "horse-racing",
+    "2d",
+    "typescript"
+  ]
+}

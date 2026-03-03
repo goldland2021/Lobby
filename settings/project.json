@@ -1,0 +1,7 @@
+﻿{
+    "last-scene":  "db://assets/scenes/LobbyScene.scene",
+    "start-scene":  "db://assets/scenes/LobbyScene.scene",
+    "last-opened-scenes":  [
+                               "db://assets/scenes/LobbyScene.scene"
+                           ]
+}
