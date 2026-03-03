@@ -65,11 +65,26 @@ function Invoke-CocosBuild([string]$homeArg) {
 
   $process = Start-Process -FilePath $creatorExe `
                            -ArgumentList $argList `
-                           -Wait `
                            -PassThru `
                            -NoNewWindow `
                            -RedirectStandardOutput $stdoutFile `
                            -RedirectStandardError $stderrFile
+
+  $timeoutMinutes = 25
+  if ($env:COCOS_BUILD_TIMEOUT_MIN) {
+    $parsed = 0
+    if ([int]::TryParse($env:COCOS_BUILD_TIMEOUT_MIN, [ref]$parsed) -and $parsed -gt 0) {
+      $timeoutMinutes = $parsed
+    }
+  }
+  $timeoutMs = $timeoutMinutes * 60 * 1000
+  Write-Host "Cocos build timeout: $timeoutMinutes minute(s)"
+
+  if (-not $process.WaitForExit($timeoutMs)) {
+    Write-Host "Cocos build timed out after $timeoutMinutes minute(s). Killing process tree..."
+    cmd /c "taskkill /PID $($process.Id) /T /F" | Out-Null
+    Start-Sleep -Seconds 1
+  }
 
   Write-Host "=== Cocos process stdout tail ==="
   if (Test-Path $stdoutFile) {
@@ -81,6 +96,8 @@ function Invoke-CocosBuild([string]$homeArg) {
   }
 
   if ($null -eq $process -or $null -eq $process.ExitCode) { return 1 }
+  if ($process.HasExited -and $process.ExitCode -ne 0) { return $process.ExitCode }
+  if (-not $process.HasExited) { return 124 }
   return $process.ExitCode
 }
 
