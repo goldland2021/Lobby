@@ -24,16 +24,18 @@ if (-not $creatorExe) {
 }
 
 $buildArgs = "platform=web-mobile;debug=false;md5Cache=true"
+$creatorHomeArg = $null
 
 # In CI, isolate Cocos/Electron profile and cache dirs to avoid permission conflicts.
 if ($env:GITHUB_ACTIONS -eq "true") {
   $ciHome = Join-Path $projectRoot ".ci-cocos-home"
+  $ciCreatorHome = Join-Path $ciHome ".CocosCreator"
   $ciAppData = Join-Path $ciHome "AppData\\Roaming"
   $ciLocalAppData = Join-Path $ciHome "AppData\\Local"
   $ciTemp = Join-Path $ciHome "Temp"
   $ciChromiumCache = Join-Path $ciHome "ChromiumCache"
 
-  New-Item -ItemType Directory -Force -Path $ciHome, $ciAppData, $ciLocalAppData, $ciTemp, $ciChromiumCache | Out-Null
+  New-Item -ItemType Directory -Force -Path $ciHome, $ciCreatorHome, $ciAppData, $ciLocalAppData, $ciTemp, $ciChromiumCache | Out-Null
 
   $env:HOME = $ciHome
   $env:USERPROFILE = $ciHome
@@ -46,14 +48,22 @@ if ($env:GITHUB_ACTIONS -eq "true") {
   $env:COCOS_CHROMIUM_CACHE_DIR = $ciChromiumCache
 
   Write-Host "CI isolated HOME: $ciHome"
+  Write-Host "CI isolated Cocos Home: $ciCreatorHome"
   Write-Host "CI isolated LOCALAPPDATA: $ciLocalAppData"
+
+  # Force Creator to use isolated home so old global plugins won't be loaded.
+  $creatorHomeArg = $ciCreatorHome
 }
 
 Write-Host "Using Cocos Creator: $creatorExe"
 Write-Host "Project: $projectRoot"
 Write-Host "Build Args: $buildArgs"
 
-& $creatorExe --project $projectRoot --build $buildArgs --disable-gpu --disable-gpu-shader-disk-cache
+if ($creatorHomeArg) {
+  & $creatorExe --project $projectRoot --build $buildArgs --home $creatorHomeArg --disable-gpu --disable-gpu-shader-disk-cache
+} else {
+  & $creatorExe --project $projectRoot --build $buildArgs --disable-gpu --disable-gpu-shader-disk-cache
+}
 $exitCode = if ($null -eq $LASTEXITCODE) { 1 } else { $LASTEXITCODE }
 if ($exitCode -ne 0) {
   Write-Error "Cocos build failed with exit code $exitCode"
