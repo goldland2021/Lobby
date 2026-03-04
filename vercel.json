@@ -1,6 +1,6 @@
 {
   "framework": null,
-  "buildCommand": "echo Skip build; use prebuilt build/web-mobile",
+  "buildCommand": "echo \"Skip build; use prebuilt build/web-mobile\"",
   "outputDirectory": "build/web-mobile",
   "rewrites": [
     {
