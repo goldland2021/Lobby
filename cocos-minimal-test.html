@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Cocos Minimal Test for TMA</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        #GameDiv {
+            width: 800px;
+            height: 600px;
+            margin: 20px auto;
+            border: 2px solid #333;
+            background: #000;
+        }
+        #log {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Cocos Minimal Test for Telegram Mini App</h1>
+    <p>This is a minimal test to see if Cocos can initialize in TMA.</p>
+    
+    <div id="GameDiv">
+        <canvas id="GameCanvas" width="800" height="600"></canvas>
+    </div>
+    
+    <h2>Initialization Log:</h2>
+    <div id="log"></div>
+    
+    <script>
+        const log = document.getElementById('log');
+        
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${time}] ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Test 1: Check if we're in TMA
+        if (window.Telegram && window.Telegram.WebApp) {
+            addLog('✅ Running in Telegram Mini App', 'success');
+            const webApp = window.Telegram.WebApp;
+            addLog(`TMA Platform: ${webApp.platform}`, 'info');
+            addLog(`TMA Version: ${webApp.version}`, 'info');
+            
+            // Expand to full height if needed
+            webApp.expand();
+        } else {
+            addLog('⚠️ Not running in Telegram Mini App', 'warning');
+        }
+        
+        // Test 2: Check WebGL support
+        try {
+            const canvas = document.getElementById('GameCanvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            
+            if (gl) {
+                addLog('✅ WebGL context created successfully', 'success');
+                
+                // Draw a simple test
+                gl.clearColor(0.2, 0.4, 0.8, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                
+                addLog('✅ Simple WebGL drawing completed', 'success');
+            } else {
+                addLog('❌ Failed to create WebGL context', 'error');
+            }
+        } catch (e) {
+            addLog(`❌ WebGL error: ${e.message}`, 'error');
+        }
+        
+        // Test 3: Try to load Cocos engine
+        addLog('Attempting to load Cocos engine...', 'info');
+        
+        const script = document.createElement('script');
+        script.src = 'build/web-mobile/cocos-js/cc.js';
+        script.onload = function() {
+            addLog('✅ Cocos engine script loaded', 'success');
+            
+            // Try to initialize Cocos
+            try {
+                if (typeof cc === 'undefined') {
+                    addLog('❌ cc object not defined after loading', 'error');
+                    return;
+                }
+                
+                addLog('✅ cc object found', 'success');
+                addLog(`Cocos version: ${cc.ENGINE_VERSION || 'unknown'}`, 'info');
+                
+                // Test basic Cocos functionality
+                cc.game.onStart = function() {
+                    addLog('✅ Cocos game started successfully', 'success');
+                    
+                    // Create a simple scene
+                    const scene = new cc.Scene();
+                    const node = new cc.Node('TestNode');
+                    scene.addChild(node);
+                    
+                    addLog('✅ Simple scene created', 'success');
+                };
+                
+                cc.game.run();
+                
+            } catch (e) {
+                addLog(`❌ Cocos initialization error: ${e.message}`, 'error');
+            }
+        };
+        
+        script.onerror = function() {
+            addLog('❌ Failed to load Cocos engine script', 'error');
+            addLog('Check if the file exists and is accessible', 'warning');
+        };
+        
+        document.head.appendChild(script);
+        
+        // Test 4: Check resource loading
+        setTimeout(() => {
+            addLog('Testing resource loading...', 'info');
+            
+            // Test loading a file from the build directory
+            fetch('build/web-mobile/index.html')
+                .then(response => {
+                    if (response.ok) {
+                        addLog('✅ Build files are accessible', 'success');
+                    } else {
+                        addLog(`❌ Build files not accessible: ${response.status}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    addLog(`❌ Network error: ${error.message}`, 'error');
+                });
+        }, 1000);
+        
+        // Final status
+        setTimeout(() => {
+            addLog('=== Test Complete ===', 'info');
+            addLog('Please share this log for debugging', 'info');
+        }, 3000);
+    </script>
+</body>
+</html>

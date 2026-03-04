@@ -1,14 +1,8 @@
 {
   "framework": null,
-  "buildCommand": "echo \"Skip build; using prebuilt build/web-mobile\"",
+  "buildCommand": "echo \"Skip build; use prebuilt build/web-mobile\"",
   "outputDirectory": "build/web-mobile",
-  "cleanUrls": true,
-  "trailingSlash": false,
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
@@ -71,6 +65,24 @@
     },
     {
       "source": "/*.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/*.png",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/*.jpg",
       "headers": [
         {
           "key": "Cache-Control",

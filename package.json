@@ -9,7 +9,8 @@
     "build:web-mobile": "echo 'Skipping build - using prebuilt files' && exit 0",
     "dev": "echo 'Dev script not configured'",
     "test": "echo 'Test script not configured'",
-    "vercel:deploy": "vercel deploy build/web-mobile --prod"
+    "vercel:deploy": "vercel deploy --prod",
+    "api:test": "node test-api.js"
   },
   "description": "Cocos Creator 2D赛马小游戏 - Cherry Farm Horse Racing",
   "version": "1.0.0",
@@ -18,6 +19,9 @@
     "node": ">=16.0.0"
   },
   "main": "index.js",
+  "dependencies": {
+    "crypto": "^1.0.1"
+  },
   "devDependencies": {
     "typescript": "^5.9.3"
   },
@@ -27,6 +31,8 @@
     "game",
     "horse-racing",
     "2d",
-    "typescript"
+    "typescript",
+    "telegram",
+    "mini-app"
   ]
 }

@@ -1,0 +1,6 @@
+[Error: EPERM: operation not permitted, open 'G:\CherryFarm\openclaw\temp\logs\project.log'] {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'open',
+  path: 'G:\\CherryFarm\\openclaw\\temp\\logs\\project.log'
+}

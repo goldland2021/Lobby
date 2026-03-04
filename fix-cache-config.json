@@ -1,0 +1,63 @@
+{
+  "name": "cherry-farm-horse-race",
+  "uuid": "ac4c6512-632e-4512-9fc1-c6c6cdaae0e4",
+  "creator": {
+    "version": "3.8.8"
+  },
+  "scripts": {
+    "build": "echo 'Skipping build - using prebuilt files' && exit 0",
+    "build:web-mobile": "echo 'Skipping build - using prebuilt files' && exit 0",
+    "dev": "echo 'Dev script not configured'",
+    "test": "echo 'Test script not configured'",
+    "vercel:deploy": "vercel deploy build/web-mobile --prod"
+  },
+  "description": "Cocos Creator 2D赛马小游戏 - Cherry Farm Horse Racing",
+  "version": "1.0.0",
+  "author": "白昱",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "main": "index.js",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cocos",
+    "game",
+    "horse-racing",
+    "2d",
+    "typescript"
+  ],
+  "cocos": {
+    "build": {
+      "web-mobile": {
+        "md5Cache": true,
+        "embedWebNative": true,
+        "sourceMaps": false,
+        "previewWidth": "1280",
+        "previewHeight": "720",
+        "useDebugBuild": false,
+        "useBuiltinServer": false,
+        "server": "",
+        "title": "Cherry Farm Horse Racing",
+        "packageName": "com.example.cherryfarm",
+        "startScene": "db://assets/scenes/LobbyScene.scene",
+        "scenes": [
+          "db://assets/scenes/LobbyScene.scene"
+        ],
+        "debug": false,
+        "sourceMaps": false,
+        "sourceMapsRoot": "",
+        "sourceMapsSources": "",
+        "sourceMapsFile": "",
+        "experimentalEraseModules": false,
+        "inlineSpriteFrames": false,
+        "mergeStartScene": false,
+        "optimizeHotUpdate": false,
+        "appendBuildTime": true,
+        "buildTimeStamp": true
+      }
+    }
+  }
+}

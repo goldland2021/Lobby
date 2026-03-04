@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Game Status Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .loading { background: #fff3cd; color: #856404; }
+        .ready { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Game Status Check</h1>
+    
+    <div id="status" class="status loading">Checking game status...</div>
+    
+    <div id="controls" style="display:none;">
+        <h2>Game Controls Test</h2>
+        <button onclick="testClick()">Test Click</button>
+        <button onclick="testKeyboard()">Test Keyboard (Press Space)</button>
+        <button onclick="checkCocos()">Check Cocos Engine</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        const statusEl = document.getElementById('status');
+        const controlsEl = document.getElementById('controls');
+        const resultsEl = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsEl.appendChild(div);
+        }
+        
+        function testClick() {
+            addResult('Click test initiated', 'info');
+            
+            // Simulate a click at the center of the game canvas
+            const event = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: window.innerWidth / 2,
+                clientY: window.innerHeight / 2
+            });
+            
+            document.dispatchEvent(event);
+            addResult('Click event dispatched to document', 'ready');
+        }
+        
+        function testKeyboard() {
+            addResult('Keyboard test - listening for Space key...', 'info');
+            
+            document.addEventListener('keydown', function onKeyDown(e) {
+                if (e.code === 'Space') {
+                    addResult('Space key detected!', 'ready');
+                    document.removeEventListener('keydown', onKeyDown);
+                }
+            });
+            
+            // Also try to dispatch a space key event
+            setTimeout(() => {
+                const event = new KeyboardEvent('keydown', {
+                    key: ' ',
+                    code: 'Space',
+                    keyCode: 32,
+                    which: 32,
+                    bubbles: true
+                });
+                document.dispatchEvent(event);
+                addResult('Space key event dispatched', 'info');
+            }, 100);
+        }
+        
+        function checkCocos() {
+            addResult('Checking Cocos engine status...', 'info');
+            
+            if (typeof cc !== 'undefined') {
+                addResult(`✅ Cocos engine loaded: ${cc.ENGINE_VERSION || 'unknown version'}`, 'ready');
+                
+                // Check if game is running
+                if (cc.game && cc.game._isRunning) {
+                    addResult('✅ Cocos game is running', 'ready');
+                } else {
+                    addResult('⚠️ Cocos game may not be running', 'loading');
+                }
+                
+                // Check current scene
+                if (cc.director && cc.director.getScene) {
+                    const scene = cc.director.getScene();
+                    if (scene) {
+                        addResult(`✅ Current scene: ${scene.name || 'unnamed'}`, 'ready');
+                    } else {
+                        addResult('⚠️ No active scene', 'loading');
+                    }
+                }
+            } else {
+                addResult('❌ Cocos engine not loaded', 'error');
+            }
+        }
+        
+        // Check if we're in TMA
+        if (window.Telegram && window.Telegram.WebApp) {
+            addResult('✅ Running in Telegram Mini App', 'ready');
+            statusEl.textContent = 'Running in Telegram Mini App';
+            statusEl.className = 'status ready';
+        } else {
+            addResult('⚠️ Not in Telegram Mini App', 'loading');
+            statusEl.textContent = 'Not in Telegram Mini App (normal browser)';
+        }
+        
+        // Check if Cocos is loaded
+        setTimeout(() => {
+            if (typeof cc !== 'undefined') {
+                statusEl.textContent = '✅ Cocos engine loaded and ready';
+                statusEl.className = 'status ready';
+                controlsEl.style.display = 'block';
+                addResult('Game appears to be loaded and ready', 'ready');
+            } else {
+                statusEl.textContent = '⚠️ Cocos engine not detected';
+                addResult('Cocos engine not detected - game may still be loading', 'loading');
+                
+                // Try to load Cocos
+                const script = document.createElement('script');
+                script.src = 'cocos-js/cc.js';
+                script.onload = () => {
+                    statusEl.textContent = '✅ Cocos engine loaded';
+                    statusEl.className = 'status ready';
+                    controlsEl.style.display = 'block';
+                    addResult('Cocos engine loaded successfully', 'ready');
+                };
+                script.onerror = () => {
+                    statusEl.textContent = '❌ Failed to load Cocos engine';
+                    statusEl.className = 'status error';
+                    addResult('Failed to load Cocos engine', 'error');
+                };
+                document.head.appendChild(script);
+            }
+        }, 2000);
+        
+        // Listen for Cocos events
+        window.addEventListener('cc-engine-loaded', () => {
+            addResult('Cocos engine loaded event detected', 'ready');
+        });
+        
+        // Check for game start
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            
+            // Look for game start messages
+            const message = args.join(' ');
+            if (message.includes('game start') || message.includes('Game Start') || 
+                message.includes('scene loaded') || message.includes('Scene loaded')) {
+                addResult(`Game event detected: ${message}`, 'ready');
+            }
+        };
+        
+        addResult('Diagnostic page loaded. Please interact with the game and check results here.', 'info');
+    </script>
+</body>
+</html>
