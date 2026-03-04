@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Path Cache Bypass Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        img { max-width: 100px; max-height: 100px; margin: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>New Path Cache Bypass Test</h1>
+    <p>Testing if new file paths bypass Vercel cache.</p>
+    
+    <div class="test" id="oldPathTest">
+        <h3>Old Path (可能被缓存):</h3>
+        <div id="oldPathResult">Testing...</div>
+        <div id="oldPathImages"></div>
+    </div>
+    
+    <div class="test" id="newPathTest">
+        <h3>New Path (应该可用):</h3>
+        <div id="newPathResult">Testing...</div>
+        <div id="newPathImages"></div>
+    </div>
+    
+    <script>
+        const oldPaths = [
+            'assets/main/native/54/544e49d6-3f05-4fa8-9a9e-091f98fc2ce8.png',
+            'assets/main/native/20/20835ba4-6145-4fbc-a58a-051ce700aa3e.png',
+            'assets/main/native/95/951249e0-9f16-456d-8b85-a6ca954da16b.png'
+        ];
+        
+        const newPaths = [
+            'assets/new/images/image1.png',
+            'assets/new/images/image2.png', 
+            'assets/new/images/image3.png'
+        ];
+        
+        async function testPaths(paths, containerId, resultId, imagesId) {
+            const container = document.getElementById(containerId);
+            const result = document.getElementById(resultId);
+            const imagesContainer = document.getElementById(imagesId);
+            
+            let successCount = 0;
+            let totalCount = paths.length;
+            
+            for (let i = 0; i < paths.length; i++) {
+                const path = paths[i];
+                try {
+                    const response = await fetch(path, { method: 'HEAD' });
+                    
+                    if (response.ok) {
+                        successCount++;
+                        
+                        // 显示图片
+                        const img = document.createElement('img');
+                        img.src = path;
+                        img.alt = `Image ${i+1}`;
+                        img.title = path;
+                        imagesContainer.appendChild(img);
+                    }
+                } catch (error) {
+                    // 忽略错误
+                }
+            }
+            
+            if (successCount === totalCount) {
+                result.textContent = `✅ All ${totalCount} files accessible`;
+                container.className = 'test success';
+            } else if (successCount > 0) {
+                result.textContent = `⚠️ ${successCount}/${totalCount} files accessible`;
+                container.className = 'test success';
+            } else {
+                result.textContent = `❌ 0/${totalCount} files accessible`;
+                container.className = 'test error';
+            }
+        }
+        
+        async function runTests() {
+            await testPaths(oldPaths, 'oldPathTest', 'oldPathResult', 'oldPathImages');
+            await testPaths(newPaths, 'newPathTest', 'newPathResult', 'newPathImages');
+            
+            // 如果新路径可用，创建修复方案
+            const newPathTest = document.getElementById('newPathTest');
+            if (newPathTest.className.includes('success')) {
+                const solutionDiv = document.createElement('div');
+                solutionDiv.className = 'test success';
+                solutionDiv.innerHTML = `
+                    <h3>✅ Solution Found!</h3>
+                    <p>New paths work! We can:</p>
+                    <ol>
+                        <li>Copy all PNG files to new directory structure</li>
+                        <li>Update Cocos resource references</li>
+                        <li>Deploy fresh version without cache issues</li>
+                    </ol>
+                    <p><strong>Next step:</strong> Rebuild Cocos project with corrected paths.</p>
+                `;
+                document.body.appendChild(solutionDiv);
+            }
+        }
+        
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>
