@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebGL Diagnostic</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        .warning { background: #fff3cd; }
+        canvas { border: 1px solid #333; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>WebGL & Game Diagnostic</h1>
+    
+    <div id="tma-test" class="test">
+        <h3>1. Telegram Mini App Detection</h3>
+        <div id="tma-result">Checking...</div>
+    </div>
+    
+    <div id="webgl-test" class="test">
+        <h3>2. WebGL Support Test</h3>
+        <canvas id="webgl-canvas" width="400" height="300"></canvas>
+        <div id="webgl-result">Testing...</div>
+    </div>
+    
+    <div id="cocos-test" class="test">
+        <h3>3. Cocos Engine Test</h3>
+        <div id="cocos-result">Loading Cocos engine...</div>
+    </div>
+    
+    <div id="interaction-test" class="test">
+        <h3>4. User Interaction Test</h3>
+        <button onclick="simulateClick()">Simulate Game Click</button>
+        <button onclick="simulateKey()">Simulate Space Key</button>
+        <div id="interaction-result">Click buttons above to test</div>
+    </div>
+    
+    <div id="game-canvas-test" class="test">
+        <h3>5. Game Canvas Inspection</h3>
+        <div id="canvas-result">Checking for game canvas...</div>
+    </div>
+    
+    <script>
+        // Test 1: TMA Detection
+        const tmaResult = document.getElementById('tma-result');
+        if (window.Telegram && window.Telegram.WebApp) {
+            tmaResult.innerHTML = '✅ Running in Telegram Mini App';
+            tmaResult.parentElement.className = 'test success';
+        } else {
+            tmaResult.innerHTML = '⚠️ Not in Telegram Mini App (normal browser)';
+            tmaResult.parentElement.className = 'test warning';
+        }
+        
+        // Test 2: WebGL Support
+        const webglCanvas = document.getElementById('webgl-canvas');
+        const webglResult = document.getElementById('webgl-result');
+        
+        try {
+            const gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('experimental-webgl');
+            if (gl) {
+                // Draw something
+                gl.clearColor(0.2, 0.4, 0.8, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                
+                webglResult.innerHTML = '✅ WebGL is supported and working';
+                webglResult.parentElement.className = 'test success';
+            } else {
+                webglResult.innerHTML = '❌ WebGL is not supported';
+                webglResult.parentElement.className = 'test error';
+            }
+        } catch (e) {
+            webglResult.innerHTML = `❌ WebGL error: ${e.message}`;
+            webglResult.parentElement.className = 'test error';
+        }
+        
+        // Test 3: Cocos Engine
+        const cocosResult = document.getElementById('cocos-result');
+        
+        function checkCocos() {
+            if (typeof cc !== 'undefined') {
+                cocosResult.innerHTML = `
+                    ✅ Cocos engine loaded<br>
+                    Version: ${cc.ENGINE_VERSION || 'unknown'}<br>
+                    Game running: ${cc.game && cc.game._isRunning ? 'Yes' : 'No'}<br>
+                    Current scene: ${cc.director && cc.director.getScene ? (cc.director.getScene()?.name || 'none') : 'unknown'}
+                `;
+                cocosResult.parentElement.className = 'test success';
+            } else {
+                cocosResult.innerHTML = '⚠️ Cocos engine not loaded yet';
+                cocosResult.parentElement.className = 'test warning';
+                
+                // Try to load it
+                const script = document.createElement('script');
+                script.src = 'cocos-js/cc.js';
+                script.onload = () => {
+                    setTimeout(checkCocos, 1000);
+                };
+                document.head.appendChild(script);
+            }
+        }
+        
+        // Test 4: User Interaction
+        function simulateClick() {
+            const event = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: window.innerWidth / 2,
+                clientY: window.innerHeight / 2
+            });
+            
+            document.dispatchEvent(event);
+            document.getElementById('interaction-result').textContent = 'Click event dispatched to center of screen';
+        }
+        
+        function simulateKey() {
+            const event = new KeyboardEvent('keydown', {
+                key: ' ',
+                code: 'Space',
+                keyCode: 32,
+                bubbles: true
+            });
+            
+            document.dispatchEvent(event);
+            document.getElementById('interaction-result').textContent = 'Space key event dispatched';
+        }
+        
+        // Test 5: Game Canvas
+        function checkGameCanvas() {
+            const canvasResult = document.getElementById('canvas-result');
+            const canvases = document.getElementsByTagName('canvas');
+            
+            if (canvases.length > 0) {
+                let html = `Found ${canvases.length} canvas element(s):<br>`;
+                for (let i = 0; i < canvases.length; i++) {
+                    const canvas = canvases[i];
+                    html += `
+                        Canvas ${i+1}: ${canvas.width}×${canvas.height}<br>
+                        Visible: ${canvas.style.display !== 'none' ? 'Yes' : 'No'}<br>
+                        Opacity: ${canvas.style.opacity || '1'}<br>
+                        Background: ${canvas.style.backgroundColor || 'default'}<br>
+                        ---<br>
+                    `;
+                }
+                canvasResult.innerHTML = html;
+                canvasResult.parentElement.className = 'test success';
+            } else {
+                canvasResult.innerHTML = 'No canvas elements found on page';
+                canvasResult.parentElement.className = 'test warning';
+            }
+        }
+        
+        // Run tests
+        setTimeout(checkCocos, 1000);
+        setTimeout(checkGameCanvas, 2000);
+        
+        // Listen for console messages
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            
+            // Check for game-related messages
+            const message = args.join(' ');
+            if (message.includes('game') || message.includes('scene') || 
+                message.includes('load') || message.includes('start')) {
+                const logDiv = document.createElement('div');
+                logDiv.textContent = `[Console] ${message}`;
+                logDiv.style.fontSize = '12px';
+                logDiv.style.color = '#666';
+                document.body.appendChild(logDiv);
+            }
+        };
+    </script>
+</body>
+</html>
