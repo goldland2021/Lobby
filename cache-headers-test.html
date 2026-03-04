@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Cache Headers Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .header { font-family: monospace; margin: 5px 0; }
+        .cache-hit { background: #f8d7da; }
+        .cache-miss { background: #d4edda; }
+    </style>
+</head>
+<body>
+    <h1>Vercel Cache Headers Test</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        const testFiles = [
+            'assets/main/native/54/544e49d6-3f05-4fa8-9a9e-091f98fc2ce8.png',
+            'assets/new/images/image1.png',
+            'src/settings.json',
+            'index.html'
+        ];
+        
+        async function testFile(url) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `<h3>Testing: ${url}</h3>`;
+            
+            try {
+                const response = await fetch(url, { method: 'GET' });
+                
+                // 检查状态
+                const status = response.status;
+                const statusText = `<div>Status: <strong>${status} ${response.statusText}</strong></div>`;
+                
+                // 收集头部信息
+                let headersHtml = '<div>Headers:</div>';
+                for (const [key, value] of response.headers.entries()) {
+                    headersHtml += `<div class="header">${key}: ${value}</div>`;
+                }
+                
+                // 检查缓存相关头部
+                const cacheControl = response.headers.get('cache-control');
+                const etag = response.headers.get('etag');
+                const age = response.headers.get('age');
+                const xCache = response.headers.get('x-cache');
+                
+                let cacheInfo = '<div>Cache Analysis:</div>';
+                cacheInfo += `<div>cache-control: ${cacheControl || 'none'}</div>`;
+                cacheInfo += `<div>etag: ${etag || 'none'}</div>`;
+                cacheInfo += `<div>age: ${age || 'none'}</div>`;
+                cacheInfo += `<div>x-cache: ${xCache || 'none'}</div>`;
+                
+                // 判断缓存状态
+                let cacheStatus = 'unknown';
+                if (xCache && xCache.includes('HIT')) {
+                    cacheStatus = 'HIT';
+                    resultDiv.classList.add('cache-hit');
+                } else if (xCache && xCache.includes('MISS')) {
+                    cacheStatus = 'MISS';
+                    resultDiv.classList.add('cache-miss');
+                }
+                
+                cacheInfo += `<div><strong>Cache Status: ${cacheStatus}</strong></div>`;
+                
+                resultDiv.innerHTML += statusText + headersHtml + cacheInfo;
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<div style="color: red;">Error: ${error.message}</div>`;
+                resultDiv.classList.add('cache-hit');
+            }
+            
+            document.getElementById('results').appendChild(resultDiv);
+        }
+        
+        async function runTests() {
+            for (const file of testFiles) {
+                await testFile(file);
+            }
+            
+            // 添加总结
+            const summary = document.createElement('div');
+            summary.className = 'result';
+            summary.innerHTML = `
+                <h3>Test Summary</h3>
+                <p><strong>如果PNG文件显示Cache HIT但返回404：</strong></p>
+                <ul>
+                    <li>Vercel正在返回缓存的404响应</li>
+                    <li>需要强制清除Vercel缓存</li>
+                    <li>或者使用全新的文件路径</li>
+                </ul>
+                <p><strong>如果PNG文件显示Cache MISS但返回404：</strong></p>
+                <ul>
+                    <li>文件可能不存在于部署中</li>
+                    <li>需要检查Git提交和部署</li>
+                </ul>
+                <p><strong>如果新路径文件可访问：</strong></p>
+                <ul>
+                    <li>证明新路径可以绕过缓存</li>
+                    <li>需要重新构建项目使用新路径</li>
+                </ul>
+            `;
+            document.getElementById('results').appendChild(summary);
+        }
+        
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>
