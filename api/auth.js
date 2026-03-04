@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 
-// Bot Token: 8657390040:AAHzow6PnRaWgUrR1fyDtOoVOxyvWCxQB4s
-const BOT_TOKEN = process.env.BOT_TOKEN || '8657390040:AAHzow6PnRaWgUrR1fyDtOoVOxyvWCxQB4s';
+const BOT_TOKEN = process.env.BOT_TOKEN || '';
 
 /**
  * 验证Telegram Mini App initData签名
@@ -113,6 +112,13 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (!BOT_TOKEN) {
+      return res.status(500).json({
+        success: false,
+        error: 'Server misconfigured: BOT_TOKEN is missing'
+      });
+    }
+
     const { initData } = req.body;
 
     if (!initData) {

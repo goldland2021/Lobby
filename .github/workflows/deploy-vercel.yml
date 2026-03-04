@@ -1,4 +1,4 @@
-name: Deploy Prebuilt Web Mobile To Vercel (Simple)
+name: Deploy Prebuilt Web Mobile To Vercel
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - "build/web-mobile/**"
+      - "api/**"
       - "vercel.json"
       - ".github/workflows/deploy-vercel.yml"
   workflow_dispatch:
@@ -33,14 +34,10 @@ jobs:
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
 
-      - name: Deploy to Vercel (Direct)
+      - name: Deploy to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          echo "Deploying prebuilt directory directly..."
-          echo "Using token: ${VERCEL_TOKEN:0:10}..."
-          
-          # Deploy without pulling project settings
-          vercel deploy build/web-mobile --prod --yes --token "$VERCEL_TOKEN" --confirm
-          
-          echo "✅ Deployment completed"
+          echo "Deploying from repo root (includes /api + prebuilt output)..."
+          vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+          echo "Deployment completed"
