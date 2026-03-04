@@ -5,8 +5,8 @@
     "version": "3.8.8"
   },
   "scripts": {
-    "build": "powershell -ExecutionPolicy Bypass -File ./scripts/build-web-mobile.ps1",
-    "build:web-mobile": "powershell -ExecutionPolicy Bypass -File ./scripts/build-web-mobile.ps1",
+    "build": "echo 'Skipping build - using prebuilt files' && exit 0",
+    "build:web-mobile": "echo 'Skipping build - using prebuilt files' && exit 0",
     "dev": "echo 'Dev script not configured'",
     "test": "echo 'Test script not configured'",
     "vercel:deploy": "vercel deploy build/web-mobile --prod"
