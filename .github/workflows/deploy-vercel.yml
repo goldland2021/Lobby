@@ -6,6 +6,8 @@ on:
       - master
     paths:
       - "build/web-mobile/**"
+      - "vercel.json"
+      - ".github/workflows/deploy-vercel.yml"
   workflow_dispatch:
 
 jobs:
