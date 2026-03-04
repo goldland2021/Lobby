@@ -1,4 +1,4 @@
-name: Deploy Prebuilt Web Mobile To Vercel
+name: Deploy Prebuilt Web Mobile To Vercel (Simple)
 
 on:
   push:
@@ -33,16 +33,14 @@ jobs:
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
 
-      - name: Pull Vercel project settings
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
-
-      - name: Deploy to Vercel
+      - name: Deploy to Vercel (Direct)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          echo "Deploying from repo root (uses vercel.json outputDirectory)..."
-          vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+          echo "Deploying prebuilt directory directly..."
+          echo "Using token: ${VERCEL_TOKEN:0:10}..."
+          
+          # Deploy without pulling project settings
+          vercel deploy build/web-mobile --prod --yes --token "$VERCEL_TOKEN" --confirm
+          
+          echo "✅ Deployment completed"
