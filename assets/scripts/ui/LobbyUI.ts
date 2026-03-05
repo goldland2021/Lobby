@@ -15,6 +15,8 @@ export class LobbyUI extends Component {
   @property(Button)
   public startButton: Button | null = null;
 
+  private practiceModeOnly = false;
+
   protected onLoad(): void {
     this.resolveReferences();
     this.applyDefaultLayoutIfOverlapped();
@@ -169,6 +171,7 @@ export class LobbyUI extends Component {
       if (this.startButton) {
         this.startButton.interactable = true;
       }
+      this.practiceModeOnly = false;
     } catch (error: unknown) {
       if (this.usernameLabel) {
         this.usernameLabel.string = "\u26A0\uFE0F Login failed";
@@ -177,8 +180,13 @@ export class LobbyUI extends Component {
         this.scoreLabel.string = "\uD83D\uDCF2 Open in Telegram or set debug_init_data";
       }
       if (this.startButton) {
-        this.startButton.interactable = false;
+        this.startButton.interactable = true;
+        const label = this.getStartButtonLabel();
+        if (label) {
+          label.string = "\uD83E\uDDEA Practice Race";
+        }
       }
+      this.practiceModeOnly = true;
     }
   }
 
@@ -198,6 +206,10 @@ export class LobbyUI extends Component {
       return;
     }
     this.startButton.interactable = false;
+    if (this.practiceModeOnly) {
+      GameManager.getInstance().loadPractice();
+      return;
+    }
     GameManager.getInstance().loadRace();
   }
 }

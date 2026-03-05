@@ -76,6 +76,10 @@ export class GameManager extends Component {
     this.loadSceneSafe("RaceScene");
   }
 
+  public loadPractice(): void {
+    this.loadSceneSafe("PracticeScene");
+  }
+
   public loadResult(): void {
     this.loadSceneSafe("ResultScene");
   }

@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, Label } from "cc";
+import { _decorator, Button, Component, Label, director } from "cc";
 import { GameManager } from "../core/GameManager";
 import { RaceManager } from "../game/RaceManager";
 import type { PlayResult } from "../types/ApiTypes";
@@ -36,7 +36,12 @@ export class RaceUI extends Component {
     }
 
     try {
-      await this.raceManager.startRace();
+      const sceneName = director.getScene()?.name ?? "";
+      if (sceneName.includes("Practice")) {
+        await this.raceManager.startPracticeRace();
+      } else {
+        await this.raceManager.startRace();
+      }
     } catch (error: unknown) {
       if (this.countdownLabel) {
         this.countdownLabel.string = error instanceof Error ? error.message : "Race failed";

@@ -72,6 +72,43 @@ export class RaceManager extends Component {
     }
   }
 
+  public async startPracticeRace(): Promise<PlayResult> {
+    if (this.state === RaceState.Requesting || this.state === RaceState.Racing) {
+      throw new Error("Race is already running");
+    }
+
+    this.ensureHorseCount();
+    this.state = RaceState.Racing;
+
+    const result: PlayResult = {
+      ranks: [0, 1, 2, 3, 4, 5],
+      winner: 0,
+      rank: 1,
+      reward: 0,
+      newScore: 0,
+    };
+
+    try {
+      const movePromises = this.horses.map((horse) => {
+        const rankIndex = result.ranks.indexOf(horse.horseId);
+        if (rankIndex < 0) {
+          throw new Error(`Horse ${horse.horseId} is missing in ranks`);
+        }
+        return horse.startRace(rankIndex);
+      });
+
+      await Promise.all(movePromises);
+
+      this.lastResult = result;
+      this.state = RaceState.Finished;
+      this.eventTarget.emit(RaceManager.EVENT_RACE_FINISHED, result);
+      return result;
+    } catch (error) {
+      this.state = RaceState.Idle;
+      throw error;
+    }
+  }
+
   private ensureHorseCount(): void {
     if (this.horses.length !== HORSE_COUNT) {
       throw new Error(`RaceManager.horses must be exactly ${HORSE_COUNT}`);
