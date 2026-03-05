@@ -1,4 +1,4 @@
-import { _decorator, Button, Component, Label, Node, director } from "cc";
+import { _decorator, Button, Component, Label, Node, UITransform, director, view } from "cc";
 import type { IUser } from "../model/UserModel";
 import { GameManager } from "../core/GameManager";
 import { AuthService } from "../network/AuthService";
@@ -18,11 +18,13 @@ export class LobbyUI extends Component {
   protected onLoad(): void {
     this.resolveReferences();
     this.applyDefaultLayoutIfOverlapped();
+    this.applyMobileFriendlyStyle();
     this.ensureStartButtonText();
     this.startButton?.node?.on(Button.EventType.CLICK, this.onStartClicked, this);
     if (this.startButton) {
       this.startButton.interactable = false;
     }
+    this.setLoadingState();
     void this.bootstrapUser();
   }
 
@@ -83,25 +85,77 @@ export class LobbyUI extends Component {
   }
 
   private ensureStartButtonText(): void {
-    if (!this.startButton) {
-      return;
-    }
-    const labelNode = this.findInTree(this.startButton.node, "Label");
-    const label = labelNode?.getComponent(Label) ?? null;
+    const label = this.getStartButtonLabel();
     if (!label) {
       return;
     }
-    if (!label.string || label.string.toLowerCase() === "button") {
-      label.string = "Start";
+
+    const normalized = (label.string || "").trim().toLowerCase();
+    if (!normalized || normalized === "button" || normalized === "start") {
+      label.string = "\uD83C\uDFC1 Start Race";
+    }
+  }
+
+  private getStartButtonLabel(): Label | null {
+    if (!this.startButton) {
+      return null;
+    }
+
+    const labelNode = this.findInTree(this.startButton.node, "Label");
+    return labelNode?.getComponent(Label) ?? null;
+  }
+
+  private applyMobileFriendlyStyle(): void {
+    if (!this.usernameLabel || !this.scoreLabel || !this.startButton) {
+      return;
+    }
+
+    const size = view.getVisibleSize();
+    const shortSide = Math.min(size.width, size.height);
+    const mobileScale = shortSide < 500 ? 1.35 : shortSide < 700 ? 1.2 : 1.0;
+
+    const usernameFont = Math.round(30 * mobileScale);
+    const scoreFont = Math.round(24 * mobileScale);
+    this.usernameLabel.fontSize = usernameFont;
+    this.usernameLabel.lineHeight = usernameFont + 12;
+    this.scoreLabel.fontSize = scoreFont;
+    this.scoreLabel.lineHeight = scoreFont + 10;
+
+    const buttonLabel = this.getStartButtonLabel();
+    if (buttonLabel) {
+      const buttonFont = Math.round(28 * mobileScale);
+      buttonLabel.fontSize = buttonFont;
+      buttonLabel.lineHeight = buttonFont + 10;
+    }
+
+    const buttonTransform = this.startButton.node.getComponent(UITransform);
+    if (buttonTransform) {
+      buttonTransform.setContentSize(
+        Math.round(220 * mobileScale),
+        Math.round(78 * mobileScale)
+      );
+    }
+
+    this.usernameLabel.node.setPosition(0, Math.round(150 * mobileScale), 0);
+    this.scoreLabel.node.setPosition(0, Math.round(75 * mobileScale), 0);
+    this.startButton.node.setPosition(0, Math.round(-45 * mobileScale), 0);
+  }
+
+  private setLoadingState(): void {
+    if (this.usernameLabel) {
+      this.usernameLabel.string = "\uD83D\uDC0E Horse Lobby";
+    }
+    if (this.scoreLabel) {
+      this.scoreLabel.string = "\uD83D\uDD04 Connecting...";
     }
   }
 
   public init(user: IUser): void {
     if (this.usernameLabel) {
-      this.usernameLabel.string = user.username;
+      this.usernameLabel.string = `\uD83D\uDC0E ${user.username}`;
     }
     if (this.scoreLabel) {
-      this.scoreLabel.string = `${user.score}`;
+      this.scoreLabel.string = `\uD83C\uDFC6 Score: ${user.score}`;
     }
   }
 
@@ -117,10 +171,10 @@ export class LobbyUI extends Component {
       }
     } catch (error: unknown) {
       if (this.usernameLabel) {
-        this.usernameLabel.string = "Login failed";
+        this.usernameLabel.string = "\u26A0\uFE0F Login failed";
       }
       if (this.scoreLabel) {
-        this.scoreLabel.string = "Open in Telegram or set debug_init_data";
+        this.scoreLabel.string = "\uD83D\uDCF2 Open in Telegram or set debug_init_data";
       }
       if (this.startButton) {
         this.startButton.interactable = false;
