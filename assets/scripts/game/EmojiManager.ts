@@ -258,6 +258,45 @@ export class EmojiManager extends Component {
     }
 
     /**
+     * 创建极简风格的大厅场景
+     * 使用少量emoji，突出赛马主题和开始按钮
+     * @param parent 父节点（通常是Lobby场景中的一个容器节点）
+     */
+    public createLobbyScene(parent: Node): void {
+        // 顶部欢迎表情
+        const welcome = this.createExpression('HAPPY', parent, { x: 0, y: 200 });
+        if (welcome) {
+            welcome.setFontSize(80);
+            welcome.playAnimation('pulse');
+        }
+
+        // 左上角：硬币图标，代表积分
+        const coin = this.createUIElement('COIN', parent, { x: -260, y: 260 });
+        if (coin) {
+            coin.setFontSize(40);
+        }
+
+        // 右上角：奖杯图标，代表排行榜/成就
+        const trophy = this.createUIElement('TROPHY', parent, { x: 260, y: 260 });
+        if (trophy) {
+            trophy.setFontSize(40);
+        }
+
+        // 中间：一匹静态赛马作为主视觉
+        const mainHorse = this.createHorse('YELLOW', parent, { x: 0, y: 80 });
+        if (mainHorse) {
+            mainHorse.setFontSize(90);
+        }
+
+        // 开始按钮附近：播放符号emoji 做轻量装饰
+        const playIcon = this.createUIElement('PLAY', parent, { x: 0, y: -20 });
+        if (playIcon) {
+            playIcon.setFontSize(48);
+            playIcon.playAnimation('bounce');
+        }
+    }
+
+    /**
      * 创建胜利特效
      * @param parent 父节点
      * @param position 位置

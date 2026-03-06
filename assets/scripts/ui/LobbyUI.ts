@@ -1,7 +1,8 @@
-import { _decorator, Button, Component, Label, Node, UITransform, director, view } from "cc";
+import { _decorator, Button, Color, Component, Label, Node, UITransform, Vec3, director, view } from "cc";
 import type { IUser } from "../model/UserModel";
 import { GameManager } from "../core/GameManager";
 import { AuthService } from "../network/AuthService";
+
 const { ccclass, property } = _decorator;
 
 @ccclass("LobbyUI")
@@ -15,13 +16,11 @@ export class LobbyUI extends Component {
   @property(Button)
   public startButton: Button | null = null;
 
+  private hintLabel: Label | null = null;
   private practiceModeOnly = false;
 
   protected onLoad(): void {
-    this.resolveReferences();
-    this.applyDefaultLayoutIfOverlapped();
-    this.applyMobileFriendlyStyle();
-    this.ensureStartButtonText();
+    this.ensureUi();
     this.startButton?.node?.on(Button.EventType.CLICK, this.onStartClicked, this);
     if (this.startButton) {
       this.startButton.interactable = false;
@@ -34,130 +33,56 @@ export class LobbyUI extends Component {
     this.startButton?.node?.off(Button.EventType.CLICK, this.onStartClicked, this);
   }
 
-  private resolveReferences(): void {
-    const root = director.getScene() ?? this.node;
-
-    if (!this.usernameLabel) {
-      const node = this.findInTree(root, "UsernameLabel");
-      this.usernameLabel = node?.getComponent(Label) ?? null;
-    }
-    if (!this.scoreLabel) {
-      const node = this.findInTree(root, "ScoreLabel");
-      this.scoreLabel = node?.getComponent(Label) ?? null;
-    }
-    if (!this.startButton) {
-      const node = this.findInTree(root, "StartButton");
-      this.startButton = node?.getComponent(Button) ?? null;
-    }
-
-    if (!this.startButton || !this.usernameLabel || !this.scoreLabel) {
-      console.warn("[LobbyUI] Missing references. Please bind in Inspector or keep node names: UsernameLabel/ScoreLabel/StartButton");
-    }
-  }
-
-  private findInTree(root: Node, name: string): Node | null {
-    if (root.name === name) {
-      return root;
-    }
-    for (const child of root.children) {
-      const found = this.findInTree(child, name);
-      if (found) {
-        return found;
-      }
-    }
-    return null;
-  }
-
-  private applyDefaultLayoutIfOverlapped(): void {
-    if (!this.usernameLabel || !this.scoreLabel || !this.startButton) {
-      return;
-    }
-
-    const u = this.usernameLabel.node.position;
-    const s = this.scoreLabel.node.position;
-    const b = this.startButton.node.position;
-    const sameSpot = u.x === s.x && u.y === s.y && s.x === b.x && s.y === b.y;
-    if (!sameSpot) {
-      return;
-    }
-
-    this.usernameLabel.node.setPosition(0, 120, 0);
-    this.scoreLabel.node.setPosition(0, 60, 0);
-    this.startButton.node.setPosition(0, -20, 0);
-  }
-
-  private ensureStartButtonText(): void {
-    const label = this.getStartButtonLabel();
-    if (!label) {
-      return;
-    }
-
-    const normalized = (label.string || "").trim().toLowerCase();
-    if (!normalized || normalized === "button" || normalized === "start") {
-      label.string = "\uD83C\uDFC1 Start Race";
-    }
-  }
-
-  private getStartButtonLabel(): Label | null {
-    if (!this.startButton) {
-      return null;
-    }
-
-    const labelNode = this.findInTree(this.startButton.node, "Label");
-    return labelNode?.getComponent(Label) ?? null;
-  }
-
-  private applyMobileFriendlyStyle(): void {
-    if (!this.usernameLabel || !this.scoreLabel || !this.startButton) {
-      return;
-    }
-
-    const size = view.getVisibleSize();
-    const shortSide = Math.min(size.width, size.height);
-    const mobileScale = shortSide < 500 ? 1.35 : shortSide < 700 ? 1.2 : 1.0;
-
-    const usernameFont = Math.round(30 * mobileScale);
-    const scoreFont = Math.round(24 * mobileScale);
-    this.usernameLabel.fontSize = usernameFont;
-    this.usernameLabel.lineHeight = usernameFont + 12;
-    this.scoreLabel.fontSize = scoreFont;
-    this.scoreLabel.lineHeight = scoreFont + 10;
-
-    const buttonLabel = this.getStartButtonLabel();
-    if (buttonLabel) {
-      const buttonFont = Math.round(28 * mobileScale);
-      buttonLabel.fontSize = buttonFont;
-      buttonLabel.lineHeight = buttonFont + 10;
-    }
-
-    const buttonTransform = this.startButton.node.getComponent(UITransform);
-    if (buttonTransform) {
-      buttonTransform.setContentSize(
-        Math.round(220 * mobileScale),
-        Math.round(78 * mobileScale)
-      );
-    }
-
-    this.usernameLabel.node.setPosition(0, Math.round(150 * mobileScale), 0);
-    this.scoreLabel.node.setPosition(0, Math.round(75 * mobileScale), 0);
-    this.startButton.node.setPosition(0, Math.round(-45 * mobileScale), 0);
-  }
-
-  private setLoadingState(): void {
-    if (this.usernameLabel) {
-      this.usernameLabel.string = "\uD83D\uDC0E Horse Lobby";
-    }
-    if (this.scoreLabel) {
-      this.scoreLabel.string = "\uD83D\uDD04 Connecting...";
-    }
-  }
-
   public init(user: IUser): void {
     if (this.usernameLabel) {
       this.usernameLabel.string = `\uD83D\uDC0E ${user.username}`;
     }
     if (this.scoreLabel) {
       this.scoreLabel.string = `\uD83C\uDFC6 Score: ${user.score}`;
+    }
+    if (this.hintLabel) {
+      this.hintLabel.string = "\uD83C\uDFC7 You ride horse #1. Tap fast to sprint.";
+    }
+  }
+
+  private ensureUi(): void {
+    const canvas = this.findInTree(director.getScene() ?? this.node, "Canvas") ?? this.node;
+    const size = view.getVisibleSize();
+    const scale = Math.min(size.width / 720, size.height / 1280) || 1;
+
+    const titleLabel = this.ensureLabel(canvas, "TitleLabel", "\uD83C\uDFC7 Tap Horse", 44, new Vec3(0, 260 * scale, 0));
+    titleLabel.color = new Color(255, 246, 163, 255);
+
+    const heroLabel = this.ensureLabel(
+      canvas,
+      "HeroEmoji",
+      "\uD83C\uDFC7  \uD83D\uDC0E  \uD83E\uDD84  \uD83E\uDD93",
+      54,
+      new Vec3(0, 140 * scale, 0)
+    );
+    heroLabel.color = new Color(255, 255, 255, 255);
+
+    this.usernameLabel = this.usernameLabel ?? this.ensureLabel(canvas, "UsernameLabel", "Connecting to Telegram", 30, new Vec3(0, 45 * scale, 0));
+    this.scoreLabel = this.scoreLabel ?? this.ensureLabel(canvas, "ScoreLabel", "Emoji Derby in TMA", 24, new Vec3(0, -10 * scale, 0));
+    this.hintLabel = this.hintLabel ?? this.ensureLabel(
+      canvas,
+      "HintLabel",
+      "\uD83D\uDC46 Tap the screen and beat 5 AI horses.",
+      22,
+      new Vec3(0, -95 * scale, 0)
+    );
+    this.startButton = this.startButton ?? this.ensureButton(canvas, "StartButton", "\uD83C\uDFC1 Start Race", new Vec3(0, -220 * scale, 0));
+  }
+
+  private setLoadingState(): void {
+    if (this.usernameLabel) {
+      this.usernameLabel.string = "\uD83D\uDC34 Horse Lobby";
+    }
+    if (this.scoreLabel) {
+      this.scoreLabel.string = "\uD83D\uDD04 Connecting...";
+    }
+    if (this.hintLabel) {
+      this.hintLabel.string = "Login first, then enter the emoji track.";
     }
   }
 
@@ -167,21 +92,23 @@ export class LobbyUI extends Component {
       const user = await AuthService.authenticate(debugInitData);
       GameManager.getInstance().setUser(user);
       this.init(user);
-
       if (this.startButton) {
         this.startButton.interactable = true;
       }
       this.practiceModeOnly = false;
-    } catch (error: unknown) {
+    } catch {
       if (this.usernameLabel) {
         this.usernameLabel.string = "\u26A0\uFE0F Login failed";
       }
       if (this.scoreLabel) {
-        this.scoreLabel.string = "\uD83D\uDCF2 Open in Telegram or set debug_init_data";
+        this.scoreLabel.string = "\uD83D\uDCF1 Open in Telegram or set debug_init_data";
+      }
+      if (this.hintLabel) {
+        this.hintLabel.string = "\uD83E\uDDEA Falling back to local practice mode.";
       }
       if (this.startButton) {
         this.startButton.interactable = true;
-        const label = this.getStartButtonLabel();
+        const label = this.startButton.node.getComponent(Label);
         if (label) {
           label.string = "\uD83E\uDDEA Practice Race";
         }
@@ -205,11 +132,69 @@ export class LobbyUI extends Component {
     if (!this.startButton || !this.startButton.interactable) {
       return;
     }
+
     this.startButton.interactable = false;
     if (this.practiceModeOnly) {
       GameManager.getInstance().loadPractice();
       return;
     }
     GameManager.getInstance().loadRace();
+  }
+
+  private ensureLabel(parent: Node, name: string, text: string, fontSize: number, position: Vec3): Label {
+    let node = this.findInTree(parent, name);
+    if (!node) {
+      node = new Node(name);
+      node.setParent(parent);
+    }
+
+    node.setPosition(position);
+    const transform = node.getComponent(UITransform) ?? node.addComponent(UITransform);
+    transform.setContentSize(620, fontSize + 24);
+
+    const label = node.getComponent(Label) ?? node.addComponent(Label);
+    label.string = text;
+    label.fontSize = fontSize;
+    label.lineHeight = fontSize + 8;
+    label.horizontalAlign = Label.HorizontalAlign.CENTER;
+    label.verticalAlign = Label.VerticalAlign.CENTER;
+    return label;
+  }
+
+  private ensureButton(parent: Node, name: string, text: string, position: Vec3): Button {
+    let node = this.findInTree(parent, name);
+    if (!node) {
+      node = new Node(name);
+      node.setParent(parent);
+    }
+
+    node.setPosition(position);
+    const transform = node.getComponent(UITransform) ?? node.addComponent(UITransform);
+    transform.setContentSize(280, 96);
+
+    const label = node.getComponent(Label) ?? node.addComponent(Label);
+    label.string = text;
+    label.fontSize = 30;
+    label.lineHeight = 38;
+    label.horizontalAlign = Label.HorizontalAlign.CENTER;
+    label.verticalAlign = Label.VerticalAlign.CENTER;
+    label.color = new Color(255, 246, 163, 255);
+
+    return node.getComponent(Button) ?? node.addComponent(Button);
+  }
+
+  private findInTree(root: Node, name: string): Node | null {
+    if (root.name === name) {
+      return root;
+    }
+
+    for (const child of root.children) {
+      const found = this.findInTree(child, name);
+      if (found) {
+        return found;
+      }
+    }
+
+    return null;
   }
 }

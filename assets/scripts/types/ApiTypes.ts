@@ -6,6 +6,10 @@ export interface PlayResult {
   rank: number;
   reward: number;
   newScore: number;
+  playerHorseId?: number;
+  tapCount?: number;
+  durationMs?: number;
+  usedLocalSimulation?: boolean;
 }
 
 export interface LeaderboardItem {

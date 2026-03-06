@@ -28,7 +28,18 @@ function resolveApiBaseUrl(): string {
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
-export const TRACK_START_X = -420;
-export const TRACK_END_X = 420;
+export const TRACK_START_X = -250;
+export const TRACK_END_X = 250;
 export const HORSE_COUNT = 6;
-export const BASE_FINISH_TIME = 4.5;
+export const BASE_FINISH_TIME = 10;
+export const PLAYER_HORSE_ID = 0;
+export const PLAYER_BASE_SPEED = 0.072;
+export const PLAYER_MAX_MOMENTUM = 1.35;
+export const PLAYER_TAP_MOMENTUM = 0.12;
+export const PLAYER_MOMENTUM_DECAY = 0.88;
+export const PLAYER_SPEED_PER_MOMENTUM = 0.085;
+export const AI_BASE_SPEED_MIN = 0.066;
+export const AI_BASE_SPEED_MAX = 0.09;
+export const AI_BURST_MIN = 0.01;
+export const AI_BURST_MAX = 0.025;
+export const AI_BURST_DECAY = 0.02;

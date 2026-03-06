@@ -23,6 +23,7 @@ export class AuthService {
   public static async authenticate(debugInitData?: string): Promise<IUser> {
     const webApp = await this.ensureTelegramWebApp();
 
+    // 1. 正常TMA环境：优先使用Telegram提供的initData走后端鉴权
     if (webApp) {
       webApp.ready?.();
       webApp.expand?.();
@@ -40,11 +41,21 @@ export class AuthService {
       return ApiClient.auth(initData);
     }
 
+    // 2. 浏览器开发环境：允许通过debug_init_data走后端auth
     if (debugInitData) {
       return ApiClient.auth(debugInitData);
     }
 
-    throw new Error("Telegram WebApp SDK not found");
+    // 3. 纯浏览器本地开发：跳过后端auth，返回一个本地开发用的虚拟用户
+    //    这样在普通浏览器中也可以完整体验大厅和比赛流程
+    const fallbackUser: IUser = {
+      userId: "dev_local",
+      username: "Dev Player",
+      score: 0,
+      totalGames: 0,
+      winCount: 0,
+    };
+    return fallbackUser;
   }
 
   private static async ensureTelegramWebApp(): Promise<ITelegramWebApp | null> {

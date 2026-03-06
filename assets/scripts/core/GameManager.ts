@@ -52,7 +52,7 @@ export class GameManager extends Component {
 
   public setLastPlayResult(result: PlayResult): void {
     this.lastPlayResult = { ...result, ranks: [...result.ranks] };
-    if (this.currentUser) {
+    if (this.currentUser && !result.usedLocalSimulation) {
       this.currentUser.score = result.newScore;
       this.currentUser.totalGames += 1;
       if (result.rank === 1) {
