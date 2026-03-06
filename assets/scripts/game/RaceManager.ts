@@ -14,7 +14,6 @@ import {
   PLAYER_TAP_MOMENTUM,
 } from "../core/Config";
 import { GameManager } from "../core/GameManager";
-import { ApiClient } from "../network/ApiClient";
 import type { PlayResult } from "../types/ApiTypes";
 import { HorseController } from "./HorseController";
 
@@ -93,38 +92,6 @@ export class RaceManager extends Component {
     }
 
     this.ensureHorseCount();
-    this.state = RaceState.Idle;
-
-    const result = await ApiClient.play();
-    this.validateServerResult(result);
-    this.state = RaceState.Racing;
-
-    const movePromises = this.horses.map((horse) => {
-      const rankIndex = result.ranks.indexOf(horse.horseId);
-      if (rankIndex < 0) {
-        throw new Error(`Horse ${horse.horseId} is missing in ranks`);
-      }
-      return horse.runServerRace(rankIndex);
-    });
-
-    await Promise.all(movePromises);
-    this.lastResult = {
-      ...result,
-      ranks: [...result.ranks],
-      playerHorseId: this.playerHorseId,
-      usedLocalSimulation: false,
-    };
-    this.state = RaceState.Finished;
-    this.eventTarget.emit(RaceManager.EVENT_RACE_FINISHED, this.lastResult);
-    return this.lastResult;
-  }
-
-  public async startPracticeRace(): Promise<PlayResult> {
-    if (this.state === RaceState.Racing) {
-      throw new Error("Race is already running");
-    }
-
-    this.ensureHorseCount();
     this.resetRace();
     this.state = RaceState.Racing;
     this.finishPromise = new Promise<PlayResult>((resolve) => {
@@ -132,6 +99,10 @@ export class RaceManager extends Component {
     });
     this.emitProgress();
     return this.finishPromise;
+  }
+
+  public async startPracticeRace(): Promise<PlayResult> {
+    return this.startRace();
   }
 
   public tap(): void {
@@ -197,14 +168,16 @@ export class RaceManager extends Component {
   private finishRace(): void {
     const ranks = [...this.finishOrder];
     const playerRank = Math.max(1, ranks.indexOf(this.playerHorseId) + 1);
+    const rewardTable = [220, 140, 90, 60, 40, 25];
+    const reward = rewardTable[playerRank - 1] ?? 20;
     const currentScore = GameManager.getInstance().getUser()?.score ?? 0;
 
     const result: PlayResult = {
       ranks,
       winner: ranks[0] ?? this.playerHorseId,
       rank: playerRank,
-      reward: 0,
-      newScore: currentScore,
+      reward,
+      newScore: currentScore + reward,
       playerHorseId: this.playerHorseId,
       tapCount: this.tapCount,
       durationMs: Math.round(this.elapsedTime * 1000),
@@ -222,23 +195,6 @@ export class RaceManager extends Component {
   private ensureHorseCount(): void {
     if (this.horses.length !== HORSE_COUNT) {
       throw new Error(`RaceManager.horses must be exactly ${HORSE_COUNT}`);
-    }
-  }
-
-  private validateServerResult(result: PlayResult): void {
-    if (result.ranks.length !== HORSE_COUNT) {
-      throw new Error(`Invalid ranks length: expected ${HORSE_COUNT}`);
-    }
-
-    const unique = new Set(result.ranks);
-    if (unique.size !== HORSE_COUNT) {
-      throw new Error("Invalid ranks: must be unique");
-    }
-
-    for (const horseId of result.ranks) {
-      if (horseId < 0 || horseId >= HORSE_COUNT) {
-        throw new Error(`Invalid horse id in ranks: ${horseId}`);
-      }
     }
   }
 

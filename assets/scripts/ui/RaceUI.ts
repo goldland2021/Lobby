@@ -23,10 +23,8 @@ export class RaceUI extends Component {
   private standingsLabel: Label | null = null;
   private canvas: Node | null = null;
   private trackRoot: Node | null = null;
-  private isPracticeMode = false;
 
   protected onLoad(): void {
-    this.isPracticeMode = (director.getScene()?.name ?? "").includes("Practice");
     this.ensureRaceScene();
     this.startButton?.node?.on(Button.EventType.CLICK, this.onStartClicked, this);
     this.raceManager?.onRaceFinished(this.onRaceFinished, this);
@@ -48,23 +46,17 @@ export class RaceUI extends Component {
 
     this.startButton.interactable = false;
     if (this.countdownLabel) {
-      this.countdownLabel.string = this.isPracticeMode ? "3...2...1... GO!" : "Server race starting...";
+      this.countdownLabel.string = "3...2...1... GO!";
     }
     if (this.statusLabel) {
-      this.statusLabel.string = this.isPracticeMode
-        ? "\uD83D\uDC46 Race started. Tap anywhere to boost your horse."
-        : "\uD83D\uDEE0 Server decides the result. Sit tight and watch the finish.";
+      this.statusLabel.string = "\uD83D\uDC46 Race started. Tap anywhere to boost your horse.";
     }
     if (this.tapHintLabel) {
-      this.tapHintLabel.string = this.isPracticeMode ? "TAP TAP TAP" : "\uD83C\uDFC7 Watch the race";
+      this.tapHintLabel.string = "TAP TAP TAP";
     }
 
     try {
-      if (this.isPracticeMode) {
-        await this.raceManager.startPracticeRace();
-      } else {
-        await this.raceManager.startRace();
-      }
+      await this.raceManager.startRace();
     } catch (error: unknown) {
       if (this.countdownLabel) {
         this.countdownLabel.string = error instanceof Error ? error.message : "Race failed";
@@ -78,14 +70,10 @@ export class RaceUI extends Component {
       this.countdownLabel.string = result.rank === 1 ? "Champion!" : "Race Over";
     }
     if (this.tapHintLabel) {
-      this.tapHintLabel.string = this.isPracticeMode
-        ? (result.rank === 1 ? "\uD83E\uDD47 NICE" : "\uD83D\uDD01 TRY AGAIN")
-        : "\uD83C\uDFC6 Result locked";
+      this.tapHintLabel.string = result.rank === 1 ? "\uD83E\uDD47 NICE" : "\uD83D\uDD01 TRY AGAIN";
     }
     if (this.statusLabel) {
-      this.statusLabel.string = this.isPracticeMode
-        ? `Practice rank ${result.rank} / Taps ${result.tapCount ?? 0}`
-        : `Rank ${result.rank} / Reward +${result.reward}`;
+      this.statusLabel.string = `Rank ${result.rank} / Reward +${result.reward} / Taps ${result.tapCount ?? 0}`;
     }
 
     const gameManager = GameManager.getInstance();
@@ -96,10 +84,6 @@ export class RaceUI extends Component {
   }
 
   private onRaceProgress(snapshot: RaceProgressSnapshot): void {
-    if (!this.isPracticeMode) {
-      return;
-    }
-
     if (this.countdownLabel) {
       this.countdownLabel.string = `\u23F1 ${snapshot.elapsedTime.toFixed(1)}s`;
     }
@@ -119,7 +103,7 @@ export class RaceUI extends Component {
   }
 
   private onScreenTapped(): void {
-    if (!this.isPracticeMode || this.raceManager?.getState() !== RaceState.Racing) {
+    if (this.raceManager?.getState() !== RaceState.Racing) {
       return;
     }
 
@@ -141,7 +125,7 @@ export class RaceUI extends Component {
     this.statusLabel = this.statusLabel ?? this.ensureLabel(
       this.canvas,
       "StatusLabel",
-      this.isPracticeMode ? "Press start to enter the track." : "Formal race uses server-side results.",
+      "Press start to enter the track.",
       22,
       new Vec3(0, 250 * scale, 0)
     );
@@ -149,7 +133,7 @@ export class RaceUI extends Component {
     this.tapHintLabel = this.tapHintLabel ?? this.ensureLabel(
       this.canvas,
       "TapHintLabel",
-      this.isPracticeMode ? "\uD83D\uDC47 Start first" : "\uD83D\uDD12 Server-controlled race",
+      "\uD83D\uDC47 Start first",
       34,
       new Vec3(0, -300 * scale, 0)
     );

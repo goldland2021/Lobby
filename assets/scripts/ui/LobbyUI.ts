@@ -17,7 +17,6 @@ export class LobbyUI extends Component {
   public startButton: Button | null = null;
 
   private hintLabel: Label | null = null;
-  private practiceModeOnly = false;
 
   protected onLoad(): void {
     this.ensureUi();
@@ -95,7 +94,6 @@ export class LobbyUI extends Component {
       if (this.startButton) {
         this.startButton.interactable = true;
       }
-      this.practiceModeOnly = false;
     } catch {
       if (this.usernameLabel) {
         this.usernameLabel.string = "\u26A0\uFE0F Login failed";
@@ -104,16 +102,15 @@ export class LobbyUI extends Component {
         this.scoreLabel.string = "\uD83D\uDCF1 Open in Telegram or set debug_init_data";
       }
       if (this.hintLabel) {
-        this.hintLabel.string = "\uD83E\uDDEA Falling back to local practice mode.";
+        this.hintLabel.string = "\uD83C\uDFC7 Local mode enabled. Tap to start racing.";
       }
       if (this.startButton) {
         this.startButton.interactable = true;
         const label = this.startButton.node.getComponent(Label);
         if (label) {
-          label.string = "\uD83E\uDDEA Practice Race";
+          label.string = "\uD83C\uDFC1 Start Race";
         }
       }
-      this.practiceModeOnly = true;
     }
   }
 
@@ -134,10 +131,6 @@ export class LobbyUI extends Component {
     }
 
     this.startButton.interactable = false;
-    if (this.practiceModeOnly) {
-      GameManager.getInstance().loadPractice();
-      return;
-    }
     GameManager.getInstance().loadRace();
   }
 

@@ -50,19 +50,12 @@ export class ResultUI extends Component {
       const tapCount = result?.tapCount ?? 0;
       const duration = result?.durationMs ? `${(result.durationMs / 1000).toFixed(1)}s` : "-";
       this.summaryLabel.string = result
-        ? result.usedLocalSimulation
-          ? `Practice mode\nHorse: #${(result.playerHorseId ?? 0) + 1}\nTaps: ${tapCount}\nTime: ${duration}`
-          : `Formal race\nHorse: #${(result.playerHorseId ?? 0) + 1}\nReward: +${result.reward}`
+        ? `Horse: #${(result.playerHorseId ?? 0) + 1}\nTaps: ${tapCount}\nTime: ${duration}`
         : "No race result yet";
     }
   }
 
   private onReplayClicked(): void {
-    const result = GameManager.getInstance().getLastPlayResult();
-    if (result?.usedLocalSimulation) {
-      GameManager.getInstance().loadPractice();
-      return;
-    }
     GameManager.getInstance().loadRace();
   }
 
